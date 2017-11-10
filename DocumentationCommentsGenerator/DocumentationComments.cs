@@ -91,7 +91,7 @@ namespace DocumentationCommentsGenerator
                         break;
                     case SyntaxKind.XmlTextLiteralToken:
                         var text = token.ValueText.ToString();
-                        tokens.Add(CreateXmlTextLiteral(text, token.LeadingTrivia.ToString()));
+                        tokens.Add(CreateXmlTextLiteral(text, _documentationCommentDelimiter));
                         break;
                     default:
                         break;
