@@ -91,7 +91,12 @@ namespace DocumentationCommentsGenerator
                         break;
                     case SyntaxKind.XmlTextLiteralToken:
                         var text = token.ValueText.ToString();
-                        tokens.Add(CreateXmlTextLiteral(text, _documentationCommentDelimiter));
+                        var delimiter = noSpace;
+                        if(tokens.Count() !=0 && tokens.Last().IsKind(SyntaxKind.XmlTextLiteralNewLineToken))
+                        {
+                            delimiter = _documentationCommentDelimiter;
+                        }
+                        tokens.Add(CreateXmlTextLiteral(text, delimiter));
                         break;
                     default:
                         break;
