@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -17,7 +18,14 @@ namespace DocumentationCommentsGenerator
             var firstTextNode = CreateXmlText(_documentationCommentDelimiter, firstTextToken);
             _nodes = _nodes.Add(firstTextNode);
 
-            GenerateCommentsForNode(nodeToDocument);
+            if (NodeContainsDocumentationComments(nodeToDocument))
+            {
+                GenerateCommentsForNodeWithDocumentationComments(nodeToDocument);
+            }
+            else
+            {
+                GenerateCommentsForNode(nodeToDocument);
+            }
 
             var lastNewlineToken = CreateXmlTextNewLine();
             var lastTextNode = CreateXmlText(_documentationCommentDelimiter, lastNewlineToken);
@@ -26,6 +34,96 @@ namespace DocumentationCommentsGenerator
             var indentLiteralToken = CreateXmlTextLiteral(_lastLeadingTrivia.ToFullString(), noSpace);
             var indentNode = CreateXmlText(noSpace, indentLiteralToken);
             _nodes = _nodes.Add(indentNode);
+        }
+
+        private static bool NodeContainsDocumentationComments(SyntaxNode nodeToDocument)
+        {
+            var xmlTriviaList = GetDocumentationTriviaList(nodeToDocument);
+            return xmlTriviaList != null && xmlTriviaList.Count() > 0;
+        }
+
+        private void GenerateCommentsForNodeWithDocumentationComments(SyntaxNode nodeToDocument)
+        {
+            XmlElementSyntax summaryElement = GetFirstSummaryElement(nodeToDocument);
+            if(summaryElement != null)
+            {
+                CreateExampleElementNodeFromCommentElementSyntax(summaryElement);
+            }
+            else
+            {
+                GenerateCommentsForNode(nodeToDocument);
+            }
+        }
+
+        private void CreateExampleElementNodeFromCommentElementSyntax(XmlElementSyntax element)
+        {
+            XmlNodeSyntax tNode = null;
+            foreach (var textNode in element.ChildNodes())
+            {
+                switch (textNode.Kind())
+                {
+                    case SyntaxKind.XmlElementStartTag:
+                        break;
+                    case SyntaxKind.XmlElementEndTag:
+                        break;
+                    case SyntaxKind.XmlText:
+                        tNode = GetTextNodeFromCommentTextNode(textNode);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if (tNode != null)
+            {
+                _nodes = _nodes.Add(CreateExampleElementNode(tNode));
+            }
+        }
+
+        private XmlNodeSyntax GetTextNodeFromCommentTextNode(SyntaxNode textNode)
+        {
+            var tokens = new List<SyntaxToken>();
+            foreach (var token in textNode.ChildTokens())
+            {
+                switch (token.Kind())
+                {
+                    case SyntaxKind.XmlTextLiteralNewLineToken:
+                        tokens.Add(CreateXmlTextNewLine());
+                        break;
+                    case SyntaxKind.XmlTextLiteralToken:
+                        var text = token.ValueText.ToString();
+                        tokens.Add(CreateXmlTextLiteral(text, token.LeadingTrivia.ToString()));
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return CreateXmlText(_documentationCommentDelimiter, tokens.ToArray());
+
+        }
+
+        private static XmlElementSyntax GetFirstSummaryElement(SyntaxNode nodeToParse)
+        {
+            XmlElementSyntax summaryElement = null;
+            var xmlTriviaList = GetDocumentationTriviaList(nodeToParse);
+            foreach (var xmlTrivia in xmlTriviaList)
+            {
+                var elementTriviaList = xmlTrivia.ChildNodes()
+                    .OfType<XmlElementSyntax>();
+                summaryElement = elementTriviaList
+                    .Where(t => t.StartTag.Name.ToString().Equals("summary"))
+                    .FirstOrDefault();
+                if (summaryElement != null)
+                {
+                    return summaryElement;
+                }
+            }
+            return null;
+        }
+
+        private static IEnumerable<DocumentationCommentTriviaSyntax> GetDocumentationTriviaList(SyntaxNode nodeToDocument)
+        {
+            return nodeToDocument.GetLeadingTrivia().Select(i => i.GetStructure())
+                .OfType<DocumentationCommentTriviaSyntax>();
         }
 
         private void GenerateCommentsForNode(SyntaxNode nodeToDocument)
