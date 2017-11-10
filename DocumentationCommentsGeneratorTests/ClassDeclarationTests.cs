@@ -50,6 +50,30 @@ namespace GenerateDocumentationCommentsTests
 
             Assert.Equal(classDecl, result.ToFullString());
         }
+
+        [Fact]
+        public void ShouldAddSummaryDocCommentsToIndented4SpacesProtectedClassDeclaration()
+        {
+            var classDecl =
+@"    protected class Class1
+    {
+    }";
+            var expected =
+@"    /// <summary>
+    /// 
+    /// </summary>
+    protected class Class1
+    {
+    }";
+            var tree = CSharpSyntaxTree.ParseText(classDecl);
+            var rewriter = new DocumentCommentsRewriter();
+            var root = (CompilationUnitSyntax)tree.GetRoot();
+            var classDeclSyntax = (ClassDeclarationSyntax)root.Members[0];
+
+            var result = rewriter.VisitClassDeclaration(classDeclSyntax);
+
+            Assert.Equal(expected, result.ToFullString());
+        }
     }
 
 }
