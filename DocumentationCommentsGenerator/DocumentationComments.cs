@@ -23,7 +23,8 @@ namespace DocumentationCommentsGenerator
             }
             else
             {
-                GenerateCommentsForNode(nodeToDocument);
+                var newNodes = CreateNewSummaryNodes(nodeToDocument);
+                AddDocumentationNodesToNodeList(newNodes);
             }
 
             var lastNewlineToken = Token.CreateXmlTextNewLine();
@@ -43,32 +44,37 @@ namespace DocumentationCommentsGenerator
 
         private void GenerateCommentsForNodeWithDocumentationComments(SyntaxNode nodeToDocument)
         {
-            XmlElementSyntax summaryElement = GetFirstSummaryElement(nodeToDocument);
-            if(summaryElement != null)
-            {
-                var summaryDocNode = new DocumentationNode(summaryElement, _documentationCommentDelimiter);
-                _nodes = _nodes.Add(summaryDocNode.ElementNode);
-            }
-            else
-            {
-                GenerateCommentsForNode(nodeToDocument);
-            }
-        }
-
-        private static XmlElementSyntax GetFirstSummaryElement(SyntaxNode nodeToParse)
-        {
-            XmlElementSyntax summaryElement = null;
-            var xmlTriviaList = GetDocumentationTriviaList(nodeToParse);
-            foreach (var xmlTrivia in xmlTriviaList)
+            var xmlTriviaList = GetDocumentationTriviaList(nodeToDocument);
+            foreach(var xmlTrivia in xmlTriviaList)
             {
                 var elementTriviaList = xmlTrivia.ChildNodes()
                     .OfType<XmlElementSyntax>();
-                summaryElement = elementTriviaList
-                    .Where(t => t.StartTag.Name.ToString().Equals("summary"))
-                    .FirstOrDefault();
-                if (summaryElement != null)
+                foreach (var elementTrivia in elementTriviaList)
                 {
-                    return summaryElement;
+                    triviaNodes.Add(new DocumentationNode(elementTrivia, _documentationCommentDelimiter));
+                }
+            }
+
+            var summaryNode = GetFirstSummaryNode();
+            if (summaryNode == null)
+            {
+                var generatedSummaryNodes = CreateNewSummaryNodes(nodeToDocument);
+                var i = 0;
+                foreach(var node in generatedSummaryNodes)
+                {
+                    triviaNodes.Insert(i, node);
+                }
+            }
+            AddDocumentationNodesToNodeList(triviaNodes);
+        }
+
+        private DocumentationNode GetFirstSummaryNode()
+        {
+            foreach (var triviaNode in triviaNodes)
+            {
+                if (triviaNode.DocumentationTagName.Equals("summary"))
+                {
+                    return triviaNode;
                 }
             }
             return null;
@@ -80,7 +86,7 @@ namespace DocumentationCommentsGenerator
                 .OfType<DocumentationCommentTriviaSyntax>();
         }
 
-        private void GenerateCommentsForNode(SyntaxNode nodeToDocument)
+        private IEnumerable<DocumentationNode> CreateNewSummaryNodes(SyntaxNode nodeToDocument)
         {
             var firstNewlineToken = Token.CreateXmlTextNewLine();
             var firstPartSummaryComment = Token.CreateXmlTextLiteral(singleSpace, _documentationCommentDelimiter);
@@ -89,8 +95,17 @@ namespace DocumentationCommentsGenerator
             var elementTextNode = Node.CreateXmlText(_documentationCommentDelimiter,
                 new SyntaxToken[] { firstNewlineToken, firstPartSummaryComment, secondNewlineToken,
                 secondPartSummaryComment});
-            var summaryExampleElementNode = Node.CreateExampleElementNode(elementTextNode);
-            _nodes = _nodes.Add(summaryExampleElementNode);
+            var elementNode = Node.CreateExampleElementNode(elementTextNode);
+            var docNode = new DocumentationNode(elementNode, _documentationCommentDelimiter);
+            return new[] { docNode };
+        }
+
+        private void AddDocumentationNodesToNodeList(IEnumerable<DocumentationNode> documentationNodes)
+        {
+            foreach(var docNode in documentationNodes)
+            {
+                _nodes = _nodes.Add(docNode.ElementNode);
+            }
         }
 
         internal SyntaxTrivia CreateDocumentationCommentsTrivia()
@@ -105,6 +120,7 @@ namespace DocumentationCommentsGenerator
         private static readonly string noSpace = "";
         private static readonly string singleSpace = " ";
         private SyntaxList<XmlNodeSyntax> _nodes = SyntaxFactory.List<XmlNodeSyntax>();
+        private List<DocumentationNode> triviaNodes = new List<DocumentationNode>();
         private SyntaxTrivia _lastLeadingTrivia;
         private string _documentationCommentDelimiter;
     }
