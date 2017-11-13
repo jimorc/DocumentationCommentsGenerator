@@ -13,10 +13,6 @@ namespace DocumentationCommentsGenerator
             _lastLeadingTrivia = nodeToDocument.GetLeadingTrivia().LastOrDefault();
             _documentationCommentDelimiter = _lastLeadingTrivia.ToFullString() + _commentDelimiter;
 
-            var firstTextToken = Token.CreateXmlTextLiteral(singleSpace, _documentationCommentDelimiter);
-            var firstTextNode = Node.CreateXmlText(_documentationCommentDelimiter, firstTextToken);
-            _nodes = _nodes.Add(firstTextNode);
-
             if (NodeContainsDocumentationComments(nodeToDocument))
             {
                 GenerateCommentsForNodeWithDocumentationComments(nodeToDocument);
@@ -102,8 +98,22 @@ namespace DocumentationCommentsGenerator
 
         private void AddDocumentationNodesToNodeList(IEnumerable<DocumentationNode> documentationNodes)
         {
+            var firstTextNode = Node.CreateXmlText(_documentationCommentDelimiter,
+                Token.CreateXmlTextLiteral(singleSpace, _documentationCommentDelimiter));
+            _nodes = _nodes.Add(firstTextNode);
+            var tokenNumber = 0;
+            var tokenList = new List<SyntaxToken>();
             foreach(var docNode in documentationNodes)
             {
+                tokenList.Clear();
+                if(tokenNumber != 0)
+                {
+                    tokenList.Add(Token.CreateXmlTextNewLine());
+                    tokenList.Add(Token.CreateXmlTextLiteral(singleSpace, _documentationCommentDelimiter));
+                }
+                ++tokenNumber;
+                var textNode = Node.CreateXmlText(_documentationCommentDelimiter, tokenList.ToArray());
+                _nodes = _nodes.Add(textNode);
                 _nodes = _nodes.Add(docNode.ElementNode);
             }
         }
