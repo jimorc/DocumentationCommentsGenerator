@@ -17,20 +17,19 @@ namespace DocumentationCommentsGenerator
                 .WithTextTokens(SyntaxFactory.TokenList(tokens));
         }
 
-        internal static XmlElementSyntax CreateExampleElementNode(XmlNodeSyntax textNode)
+        internal static XmlElementSyntax CreateExampleElementNode(XmlNodeSyntax textNode, string tagName)
         {
-            string summary = "summary";
             return SyntaxFactory.XmlExampleElement(
                 SyntaxFactory.SingletonList<XmlNodeSyntax>(
                     textNode))
                     .WithStartTag(
                 SyntaxFactory.XmlElementStartTag(
                     SyntaxFactory.XmlName(
-                        SyntaxFactory.Identifier(summary))))
+                        SyntaxFactory.Identifier(tagName))))
                         .WithEndTag(
                 SyntaxFactory.XmlElementEndTag(
                     SyntaxFactory.XmlName(
-                        SyntaxFactory.Identifier(summary))));
+                        SyntaxFactory.Identifier(tagName))));
         }
     }
 }

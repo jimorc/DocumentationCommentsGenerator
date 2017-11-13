@@ -72,7 +72,7 @@ namespace DocumentationCommentsGenerator
         {
             foreach (var triviaNode in triviaNodes)
             {
-                if (triviaNode.DocumentationTagName.Equals("summary"))
+                if (triviaNode.DocumentationTagName.Equals(summary))
                 {
                     return triviaNode;
                 }
@@ -95,7 +95,7 @@ namespace DocumentationCommentsGenerator
             var elementTextNode = Node.CreateXmlText(_documentationCommentDelimiter,
                 new SyntaxToken[] { firstNewlineToken, firstPartSummaryComment, secondNewlineToken,
                 secondPartSummaryComment});
-            var elementNode = Node.CreateExampleElementNode(elementTextNode);
+            var elementNode = Node.CreateExampleElementNode(elementTextNode, summary);
             var docNode = new DocumentationNode(elementNode, _documentationCommentDelimiter);
             return new[] { docNode };
         }
@@ -119,6 +119,7 @@ namespace DocumentationCommentsGenerator
         private const string _commentDelimiter = "///";
         private static readonly string noSpace = "";
         private static readonly string singleSpace = " ";
+        private static readonly string summary = "summary";
         private SyntaxList<XmlNodeSyntax> _nodes = SyntaxFactory.List<XmlNodeSyntax>();
         private List<DocumentationNode> triviaNodes = new List<DocumentationNode>();
         private SyntaxTrivia _lastLeadingTrivia;

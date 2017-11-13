@@ -12,11 +12,13 @@ namespace DocumentationCommentsGenerator
         {
             _documentationCommentDelimiter = commentDelimiter;
             XmlNodeSyntax tNode = null;
+            string startTag = string.Empty;
             foreach (var textNode in documentationElement.ChildNodes())
             {
                 switch (textNode.Kind())
                 {
                     case SyntaxKind.XmlElementStartTag:
+                        startTag = StartAndEndTags.GetStartTagName(textNode);
                         break;
                     case SyntaxKind.XmlElementEndTag:
                         break;
@@ -27,7 +29,7 @@ namespace DocumentationCommentsGenerator
                         break;
                 }
             }
-            _elementNode = Node.CreateExampleElementNode(tNode);
+            _elementNode = Node.CreateExampleElementNode(tNode, startTag);
         }
 
         private XmlNodeSyntax GetTextNodeFromCommentTextNode(SyntaxNode textNode)
