@@ -17,7 +17,7 @@ namespace DocumentationCommentsGenerator
                 .WithTextTokens(SyntaxFactory.TokenList(tokens));
         }
 
-        internal static XmlElementSyntax CreateExampleElementNode(XmlNodeSyntax textNode, string tagName)
+        internal static XmlNodeSyntax CreateExampleElementNode(XmlNodeSyntax textNode, string tagName)
         {
             return SyntaxFactory.XmlExampleElement(
                 SyntaxFactory.SingletonList<XmlNodeSyntax>(
@@ -30,6 +30,33 @@ namespace DocumentationCommentsGenerator
                 SyntaxFactory.XmlElementEndTag(
                     SyntaxFactory.XmlName(
                         SyntaxFactory.Identifier(tagName))));
+        }
+
+        internal static XmlNodeSyntax CreateXmlNullKeywordElement(string nodeName)
+        {
+            return SyntaxFactory.XmlNullKeywordElement()
+                .WithName(
+                    SyntaxFactory.XmlName(
+                        SyntaxFactory.Identifier(nodeName)));
+        }
+
+        internal static XmlNodeSyntax CreateXmlNullKeywordElement(string nodeName, string identifier)
+        {
+            var nullNode = CreateXmlNullKeywordElement(nodeName);
+            return AddCrefIdentifierToNullKeywordElement(nullNode, identifier);
+        }
+
+        internal static XmlNodeSyntax AddCrefIdentifierToNullKeywordElement(XmlNodeSyntax node, string identifier)
+        {
+            if (node.IsKind(SyntaxKind.XmlEmptyElement))
+            {
+               node = ((XmlEmptyElementSyntax)(node)).WithAttributes(
+                        SyntaxFactory.SingletonList<XmlAttributeSyntax>(
+                            SyntaxFactory.XmlCrefAttribute(
+                                SyntaxFactory.NameMemberCref(
+                                    SyntaxFactory.IdentifierName(identifier)))));
+            }
+            return node;
         }
     }
 }

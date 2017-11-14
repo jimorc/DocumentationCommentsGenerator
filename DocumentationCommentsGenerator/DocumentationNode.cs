@@ -8,7 +8,7 @@ namespace DocumentationCommentsGenerator
 {
     internal class DocumentationNode
     {
-        internal DocumentationNode(XmlElementSyntax documentationElement, string commentDelimiter)
+        internal DocumentationNode(XmlNodeSyntax documentationElement, string commentDelimiter)
         {
             _documentationCommentDelimiter = commentDelimiter;
             XmlNodeSyntax tNode = null;
@@ -24,12 +24,21 @@ namespace DocumentationCommentsGenerator
                         break;
                     case SyntaxKind.XmlText:
                         tNode = GetTextNodeFromCommentTextNode(textNode);
+                        _elementNode = Node.CreateExampleElementNode(tNode, startTag);
+                        break;
+                    case SyntaxKind.XmlName:
+                        var name = ((XmlNameSyntax)textNode).LocalName.ValueText;
+                        _elementNode = Node.CreateXmlNullKeywordElement(name);
+                        break;
+                    case SyntaxKind.XmlCrefAttribute:
+                        var identifier = ((XmlCrefAttributeSyntax)textNode).Cref.ToString();
+                        _elementNode = Node.AddCrefIdentifierToNullKeywordElement(_elementNode, identifier);
                         break;
                     default:
                         break;
                 }
             }
-            _elementNode = Node.CreateExampleElementNode(tNode, startTag);
+//            _elementNode = Node.CreateExampleElementNode(tNode, startTag);
         }
 
         private XmlNodeSyntax GetTextNodeFromCommentTextNode(SyntaxNode textNode)
@@ -60,16 +69,26 @@ namespace DocumentationCommentsGenerator
 
         internal string DocumentationTagName
         {
-            get { return _elementNode.StartTag.Name.ToString(); }
+            get
+            {
+                if (_elementNode.IsKind(SyntaxKind.XmlElement))
+                {
+                    return ((XmlElementSyntax)_elementNode).StartTag.Name.ToString();
+                }
+                else
+                {
+                    return noSpace;
+                }
+            }
         }
 
-        internal XmlElementSyntax ElementNode
+        internal XmlNodeSyntax ElementNode
         {
             get { return _elementNode; }
         }
 
         private static readonly string noSpace = "";
         private string _documentationCommentDelimiter;
-        private XmlElementSyntax _elementNode = null;
+        private XmlNodeSyntax _elementNode = null;
     }
 }

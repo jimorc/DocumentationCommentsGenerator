@@ -84,6 +84,7 @@ namespace DocumentationCommentsGenerator
 
         private IEnumerable<DocumentationNode> CreateNewSummaryNodes(SyntaxNode nodeToDocument)
         {
+            var docNodes = new List<DocumentationNode>();
             var firstNewlineToken = Token.CreateXmlTextNewLine();
             var firstPartSummaryComment = Token.CreateXmlTextLiteral(singleSpace, _documentationCommentDelimiter);
             var secondNewlineToken = Token.CreateXmlTextNewLine();
@@ -93,7 +94,40 @@ namespace DocumentationCommentsGenerator
                 secondPartSummaryComment});
             var elementNode = Node.CreateExampleElementNode(elementTextNode, summary);
             var docNode = new DocumentationNode(elementNode, _documentationCommentDelimiter);
-            return new[] { docNode };
+            docNodes.Add(docNode);
+            var baseNodes = GetClassDeclarationBaseClasses(nodeToDocument);
+            foreach(var node in baseNodes)
+            {
+                docNodes.Add(node);
+            }
+            return docNodes;
+        }
+
+        private IEnumerable<DocumentationNode> GetClassDeclarationBaseClasses(SyntaxNode nodeToDocument)
+        {
+            var baseNodes = new List<DocumentationNode>();
+            var baseClasses = nodeToDocument.ChildNodes()
+                .OfType<BaseListSyntax>().FirstOrDefault();
+            if (baseClasses != null)
+            {
+                var baseClasses2 = baseClasses.ChildNodes()
+                    .OfType<SimpleBaseTypeSyntax>();
+                if (baseClasses2 != null)
+                {
+                    foreach(var baseClass in baseClasses2)
+                    {
+                        var identifierName = baseClass.ChildNodes()
+                            .OfType<IdentifierNameSyntax>()
+                            .First()
+                            .ToString();
+                        
+                        var nullElement = Node.CreateXmlNullKeywordElement("seealso", identifierName);
+                        var baseNode = new DocumentationNode(nullElement, _documentationCommentDelimiter);
+                        baseNodes.Add(baseNode);
+                    }
+                }
+            }
+            return baseNodes;
         }
 
         private void AddDocumentationNodesToNodeList(IEnumerable<DocumentationNode> documentationNodes)
