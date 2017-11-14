@@ -297,5 +297,32 @@ namespace GenerateDocumentationCommentsTests
 
             Assert.Equal(expected, result.ToFullString());
         }
+
+        [Fact]
+        public void ShouldAddSummaryAnd3SeeAlsoCommentsForChildClassesAnd2Interfaces()
+        {
+            var classDecl =
+@"    internal class Class1 : Class0, IClass, IClass2
+    {
+    }";
+            var expected =
+@"    /// <summary>
+    /// 
+    /// </summary>
+    /// <seealso cref=""Class0""/>
+    /// <seealso cref=""IClass""/>
+    /// <seealso cref=""IClass2""/>
+    internal class Class1 : Class0, IClass, IClass2
+    {
+    }";
+            var tree = CSharpSyntaxTree.ParseText(classDecl);
+            var rewriter = new DocumentCommentsRewriter();
+            var root = (CompilationUnitSyntax)tree.GetRoot();
+            var classDeclSyntax = (ClassDeclarationSyntax)root.Members[0];
+
+            var result = rewriter.VisitClassDeclaration(classDeclSyntax);
+
+            Assert.Equal(expected, result.ToFullString());
+        }
     }
 }
