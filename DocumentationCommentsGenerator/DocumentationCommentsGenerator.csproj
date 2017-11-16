@@ -54,6 +54,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ClassDeclarationDocumentationComments.cs" />
     <Compile Include="DocumentationComments.cs" />
     <Compile Include="DocumentationNode.cs" />
     <Compile Include="DocumentCommentsRewriter.cs" />

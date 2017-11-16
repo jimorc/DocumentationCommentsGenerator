@@ -24,7 +24,7 @@ namespace DocumentationCommentsGenerator
                 .FirstOrDefault();
             if (!accessModifier.IsKind(SyntaxKind.None))
             {
-                var docComments = new DocumentationComments(node);
+                var docComments = new ClassDeclarationDocumentationComments(node);
                 var leadingTrivia = docComments.CreateDocumentationCommentsTrivia();
                 node = node.WithLeadingTrivia(leadingTrivia);
             }

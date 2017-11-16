@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DocumentationCommentsGenerator
 {
-    internal class DocumentationComments
+    internal abstract class DocumentationComments
     {
         internal DocumentationComments(SyntaxNode nodeToDocument)
         {
@@ -27,14 +27,16 @@ namespace DocumentationCommentsGenerator
                 AddDocumentationNodesToNodeList(newNodes);
             }
 
-            AddNewLineNodeToNodes(_documentationCommentDelimiter);
+            AddNewLineNodeToNodes(DocumentationCommentDelimiter);
             InsertIndentationNode(_lastLeadingTrivia.ToString());
         }
 
+        protected abstract IEnumerable<DocumentationNode> CreateNewSummaryNodes(SyntaxNode nodeToDocument);
+
         private void InsertIndentationNode(string indentationText)
         {
-            var indentLiteralToken = Token.CreateXmlTextLiteral(indentationText, noSpace);
-            var indentNode = Node.CreateXmlText(noSpace, indentLiteralToken);
+            var indentLiteralToken = Token.CreateXmlTextLiteral(indentationText, NoSpace);
+            var indentNode = Node.CreateXmlText(NoSpace, indentLiteralToken);
             _nodes = _nodes.Add(indentNode);
         }
 
@@ -44,7 +46,7 @@ namespace DocumentationCommentsGenerator
             {
                 if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
                 {
-                    AddNewLineNodeToNodes(noSpace);
+                    AddNewLineNodeToNodes(NoSpace);
                 }
                 else
                 {
@@ -75,7 +77,7 @@ namespace DocumentationCommentsGenerator
                     .OfType<XmlElementSyntax>();
                 foreach (var elementTrivia in elementTriviaList)
                 {
-                    triviaNodes.Add(new DocumentationNode(elementTrivia, _documentationCommentDelimiter));
+                    triviaNodes.Add(new DocumentationNode(elementTrivia, DocumentationCommentDelimiter));
                 }
             }
 
@@ -110,108 +112,10 @@ namespace DocumentationCommentsGenerator
                 .OfType<DocumentationCommentTriviaSyntax>();
         }
 
-        private IEnumerable<DocumentationNode> CreateNewSummaryNodes(SyntaxNode nodeToDocument)
-        {
-            var docNodes = new List<DocumentationNode>();
-            var firstNewlineToken = Token.CreateXmlTextNewLine();
-            var firstPartSummaryComment = Token.CreateXmlTextLiteral(singleSpace, _documentationCommentDelimiter);
-            var secondNewlineToken = Token.CreateXmlTextNewLine();
-            var secondPartSummaryComment = Token.CreateXmlTextLiteral(singleSpace, _documentationCommentDelimiter);
-            var elementTextNode = Node.CreateXmlText(_documentationCommentDelimiter,
-                new SyntaxToken[] { firstNewlineToken, firstPartSummaryComment, secondNewlineToken,
-                secondPartSummaryComment});
-            var elementNode = Node.CreateExampleElementNode(elementTextNode, summary);
-            var docNode = new DocumentationNode(elementNode, _documentationCommentDelimiter);
-            docNodes.Add(docNode);
-            var baseNodes = GetClassDeclarationBaseClasses(nodeToDocument);
-            foreach(var node in baseNodes)
-            {
-                docNodes.Add(node);
-            }
-            return docNodes;
-        }
-
-        private IEnumerable<DocumentationNode> GetClassDeclarationBaseClasses(SyntaxNode nodeToDocument)
-        {
-            var baseNodes = new List<DocumentationNode>();
-            var baseClasses = nodeToDocument.ChildNodes()
-                .OfType<BaseListSyntax>().FirstOrDefault();
-            if (baseClasses != null)
-            {
-                var baseClasses2 = baseClasses.ChildNodes()
-                    .OfType<SimpleBaseTypeSyntax>();
-                string identifierName = string.Empty;
-                if (baseClasses2 != null)
-                {
-                    foreach(var baseClass in baseClasses2)
-                    {
-                        var firstBaseNode = baseClass.ChildNodes().First();
-                        switch (firstBaseNode.Kind())
-                        {
-                            case SyntaxKind.IdentifierName:
-                            case SyntaxKind.GenericName:
-                                var idName = firstBaseNode.ToString();
-                                identifierName = GetFullyQualifiedClassName(firstBaseNode, nodeToDocument);
-                                break;
-                            case SyntaxKind.SimpleBaseType:
-                                identifierName = baseClass.ChildNodes()
-                                    .OfType<IdentifierNameSyntax>()
-                                    .First()
-                                    .ToString();
-                                break;
-                        }
-                        var nullElement = Node.CreateXmlNullKeywordElement("seealso", identifierName);
-                        var baseNode = new DocumentationNode(nullElement, _documentationCommentDelimiter);
-                        baseNodes.Add(baseNode);
-                    }
-                }
-            }
-            return baseNodes;
-        }
-
-        private static string GetFullyQualifiedClassName(SyntaxNode classNameNode, SyntaxNode nodeToDocument)
-        {
-            var typeClassName = GetTypeClassName(classNameNode);
-            var syntaxTree = nodeToDocument.SyntaxTree;
-            var root = syntaxTree.GetRoot();
-            var usingNodes = root.ChildNodes()
-                .OfType<UsingDirectiveSyntax>();
-            foreach(var usingNode in usingNodes)
-            {
-                var usingIdentifier = usingNode.ChildNodes()
-                    .Where(u => u.IsKind(SyntaxKind.IdentifierName)
-                        || u.IsKind(SyntaxKind.QualifiedName))
-                    .FirstOrDefault();
-                if(usingIdentifier != null)
-                {
-                    var possibleFullyQualifiedClassName = string.Format(
-                        "{0}.{1}", usingIdentifier.ToString(), typeClassName);
-                    if (Type.GetType(possibleFullyQualifiedClassName) != null)
-                    {
-                        return possibleFullyQualifiedClassName;
-                    }
-                }
-            }
-            return typeClassName;
-        }
-
-        private static string GetTypeClassName(SyntaxNode classNameNode)
-        {
-            var className = classNameNode.ToString();
-            var baseClassNames = classNameNode.ChildNodes();
-            var genericArgumentCount = baseClassNames.Count();
-            if(genericArgumentCount > 0)
-            {
-                Match match = Regex.Match(className, (@"[A-Za-z0-9_\.]+"));
-                className = match.Value + "`" + genericArgumentCount.ToString();
-            }
-            return className;
-        }
-
         private void AddDocumentationNodesToNodeList(IEnumerable<DocumentationNode> documentationNodes)
         {
-            var firstTextNode = Node.CreateXmlText(_documentationCommentDelimiter,
-                Token.CreateXmlTextLiteral(singleSpace, _documentationCommentDelimiter));
+            var firstTextNode = Node.CreateXmlText(DocumentationCommentDelimiter,
+                Token.CreateXmlTextLiteral(SingleSpace, DocumentationCommentDelimiter));
             _nodes = _nodes.Add(firstTextNode);
             var tokenNumber = 0;
             var tokenList = new List<SyntaxToken>();
@@ -221,10 +125,10 @@ namespace DocumentationCommentsGenerator
                 if(tokenNumber != 0)
                 {
                     tokenList.Add(Token.CreateXmlTextNewLine());
-                    tokenList.Add(Token.CreateXmlTextLiteral(singleSpace, _documentationCommentDelimiter));
+                    tokenList.Add(Token.CreateXmlTextLiteral(SingleSpace, DocumentationCommentDelimiter));
                 }
                 ++tokenNumber;
-                var textNode = Node.CreateXmlText(_documentationCommentDelimiter, tokenList.ToArray());
+                var textNode = Node.CreateXmlText(DocumentationCommentDelimiter, tokenList.ToArray());
                 _nodes = _nodes.Add(textNode);
                 _nodes = _nodes.Add(docNode.ElementNode);
             }
@@ -239,12 +143,14 @@ namespace DocumentationCommentsGenerator
         }
 
         private const string _commentDelimiter = "///";
-        private static readonly string noSpace = "";
-        private static readonly string singleSpace = " ";
-        private static readonly string summary = "summary";
+        protected static readonly string summary = "summary";
         private SyntaxList<XmlNodeSyntax> _nodes = SyntaxFactory.List<XmlNodeSyntax>();
         private List<DocumentationNode> triviaNodes = new List<DocumentationNode>();
         private SyntaxTrivia _lastLeadingTrivia;
-        private string _documentationCommentDelimiter;
+        private readonly string _documentationCommentDelimiter;
+
+        protected static string NoSpace { get => string.Empty; }
+        protected static string SingleSpace { get => " "; }
+        protected string DocumentationCommentDelimiter { get => _documentationCommentDelimiter; }
     }
 }
