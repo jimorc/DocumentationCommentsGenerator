@@ -13,17 +13,7 @@ namespace DocumentationCommentsGenerator
         internal DocumentationComments(SyntaxNode nodeToDocument)
         {
             var leadingTrivia = nodeToDocument.GetLeadingTrivia();
-            foreach(var trivia in leadingTrivia)
-            {
-                if(trivia.IsKind(SyntaxKind.EndOfLineTrivia))
-                {
-                    AddNewLineNodeToNodes(noSpace);
-                }
-                else
-                {
-                    break;
-                }
-            }
+            InsertLeadingNewLines(leadingTrivia);
             _lastLeadingTrivia = nodeToDocument.GetLeadingTrivia().LastOrDefault();
             _documentationCommentDelimiter = _lastLeadingTrivia.ToFullString() + _commentDelimiter;
 
@@ -42,6 +32,21 @@ namespace DocumentationCommentsGenerator
             var indentLiteralToken = Token.CreateXmlTextLiteral(_lastLeadingTrivia.ToFullString(), noSpace);
             var indentNode = Node.CreateXmlText(noSpace, indentLiteralToken);
             _nodes = _nodes.Add(indentNode);
+        }
+
+        private void InsertLeadingNewLines(SyntaxTriviaList leadingTrivia)
+        {
+            foreach (var trivia in leadingTrivia)
+            {
+                if (trivia.IsKind(SyntaxKind.EndOfLineTrivia))
+                {
+                    AddNewLineNodeToNodes(noSpace);
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
 
         private void AddNewLineNodeToNodes(string commentDelimiter)
