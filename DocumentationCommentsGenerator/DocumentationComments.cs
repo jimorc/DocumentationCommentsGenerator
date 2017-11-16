@@ -17,9 +17,7 @@ namespace DocumentationCommentsGenerator
             {
                 if(trivia.IsKind(SyntaxKind.EndOfLineTrivia))
                 {
-                    var newlineToken = Token.CreateXmlTextNewLine();
-                    var newLineNode = Node.CreateXmlText(noSpace, newlineToken);
-                    _nodes = _nodes.Add(newLineNode);
+                    AddNewLineNodeToNodes(noSpace);
                 }
                 else
                 {
@@ -39,16 +37,19 @@ namespace DocumentationCommentsGenerator
                 AddDocumentationNodesToNodeList(newNodes);
             }
 
-            var lastNewlineToken = Token.CreateXmlTextNewLine();
-            var lastTextNode = Node.CreateXmlText(_documentationCommentDelimiter, lastNewlineToken);
-            _nodes = _nodes.Add(lastTextNode);
+            AddNewLineNodeToNodes(_documentationCommentDelimiter);
 
             var indentLiteralToken = Token.CreateXmlTextLiteral(_lastLeadingTrivia.ToFullString(), noSpace);
             var indentNode = Node.CreateXmlText(noSpace, indentLiteralToken);
             _nodes = _nodes.Add(indentNode);
         }
 
-//        private void AddNewLineToNodes()
+        private void AddNewLineNodeToNodes(string commentDelimiter)
+        {
+            var newlineToken = Token.CreateXmlTextNewLine();
+            var newLineNode = Node.CreateXmlText(commentDelimiter, newlineToken);
+            _nodes = _nodes.Add(newLineNode);
+        }
 
         private static bool NodeContainsDocumentationComments(SyntaxNode nodeToDocument)
         {
