@@ -324,5 +324,33 @@ namespace GenerateDocumentationCommentsTests
 
             Assert.Equal(expected, result.ToFullString());
         }
+
+        [Fact]
+        public void ShouldAddSummaryAndSeeAlsoCommentsForClassWithTemplatedBaseClass()
+        {
+            var classDecl =
+@"using System.Collections.Generic;
+
+    internal class Class1 : IEnumerable<Class0>
+    {
+    }";
+            var expected =
+@"using System.Collections.Generic;
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <seealso cref=""System.Collections.Generic.IEnumerable`1""/>
+    internal class Class1 : IEnumerable<Class0>
+    {
+    }";
+            var tree = CSharpSyntaxTree.ParseText(classDecl);
+            var rewriter = new DocumentCommentsRewriter();
+            var root = (CompilationUnitSyntax)tree.GetRoot();
+
+            var result = rewriter.Visit(root);
+
+            Assert.Equal(expected, result.ToFullString());
+        }
     }
 }
