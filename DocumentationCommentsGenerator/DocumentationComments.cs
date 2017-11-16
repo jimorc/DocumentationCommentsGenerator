@@ -96,7 +96,7 @@ namespace DocumentationCommentsGenerator
         {
             foreach (var triviaNode in triviaNodes)
             {
-                if (triviaNode.DocumentationTagName.Equals(summary))
+                if (triviaNode.DocumentationTagName.Equals(Summary))
                 {
                     return triviaNode;
                 }
@@ -141,7 +141,7 @@ namespace DocumentationCommentsGenerator
         }
 
         private const string _commentDelimiter = "///";
-        protected static readonly string summary = "summary";
+        protected static string Summary { get => "summary"; }
         private SyntaxList<XmlNodeSyntax> _nodes = SyntaxFactory.List<XmlNodeSyntax>();
         private List<DocumentationNode> triviaNodes = new List<DocumentationNode>();
         private SyntaxTrivia _lastLeadingTrivia;

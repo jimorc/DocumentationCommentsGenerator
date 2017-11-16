@@ -24,7 +24,7 @@ namespace DocumentationCommentsGenerator
             var elementTextNode = Node.CreateXmlText(DocumentationCommentDelimiter,
                 new SyntaxToken[] { firstNewlineToken, firstPartSummaryComment, secondNewlineToken,
                     secondPartSummaryComment});
-            var elementNode = Node.CreateExampleElementNode(elementTextNode, summary);
+            var elementNode = Node.CreateExampleElementNode(elementTextNode, Summary);
             var docNode = new DocumentationNode(elementNode, DocumentationCommentDelimiter);
             docNodes.Add(docNode);
             var baseNodes = GetClassDeclarationBaseClasses(nodeToDocument);
