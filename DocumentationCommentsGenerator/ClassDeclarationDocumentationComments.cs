@@ -107,13 +107,14 @@ namespace DocumentationCommentsGenerator
             var genericArgumentCount = baseClassNames.Count();
             if (genericArgumentCount > 0)
             {
-                Match match = Regex.Match(className, (@"[A-Za-z0-9_\.]+"));
+                Match match = Regex.Match(className, TypeClassNameMatchString);
                 className = match.Value + "`" + genericArgumentCount.ToString();
             }
             return className;
         }
 
         private static string SeeAlso { get => "seealso";}
+        private static string TypeClassNameMatchString { get => @"([A-Za-z0-9_\.]+)"; }
     }
 
 }
