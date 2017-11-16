@@ -28,8 +28,12 @@ namespace DocumentationCommentsGenerator
             }
 
             AddNewLineNodeToNodes(_documentationCommentDelimiter);
+            InsertIndentationNode(_lastLeadingTrivia.ToString());
+        }
 
-            var indentLiteralToken = Token.CreateXmlTextLiteral(_lastLeadingTrivia.ToFullString(), noSpace);
+        private void InsertIndentationNode(string indentationText)
+        {
+            var indentLiteralToken = Token.CreateXmlTextLiteral(indentationText, noSpace);
             var indentNode = Node.CreateXmlText(noSpace, indentLiteralToken);
             _nodes = _nodes.Add(indentNode);
         }
