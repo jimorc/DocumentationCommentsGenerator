@@ -65,7 +65,7 @@ namespace DocumentationCommentsGenerator
                                     .ToString();
                                 break;
                         }
-                        var nullElement = Node.CreateXmlNullKeywordElement("seealso", identifierName);
+                        var nullElement = Node.CreateXmlNullKeywordElement(SeeAlso, identifierName);
                         var baseNode = new DocumentationNode(nullElement, DocumentationCommentDelimiter);
                         baseNodes.Add(baseNode);
                     }
@@ -112,6 +112,8 @@ namespace DocumentationCommentsGenerator
             }
             return className;
         }
+
+        private static string SeeAlso { get => "seealso";}
     }
 
 }
