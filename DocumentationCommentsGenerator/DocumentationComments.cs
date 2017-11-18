@@ -10,6 +10,12 @@ namespace DocumentationCommentsGenerator
     {
         internal DocumentationComments(SyntaxNode nodeToDocument)
         {
+            var tree = nodeToDocument.SyntaxTree;
+            var Mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
+            var compilation = CSharpCompilation.Create("MyCompilation",
+                syntaxTrees: new[] { tree }, references: new[] { Mscorlib });
+            _model = compilation.GetSemanticModel(tree);
+
             var leadingTrivia = nodeToDocument.GetLeadingTrivia();
             InsertLeadingNewLines(leadingTrivia);
             _lastLeadingTrivia = nodeToDocument.GetLeadingTrivia().LastOrDefault();
@@ -145,6 +151,7 @@ namespace DocumentationCommentsGenerator
         private SyntaxList<XmlNodeSyntax> _nodes = SyntaxFactory.List<XmlNodeSyntax>();
         private List<DocumentationNode> triviaNodes = new List<DocumentationNode>();
         private SyntaxTrivia _lastLeadingTrivia;
+        protected SemanticModel _model;
         private readonly string _documentationCommentDelimiter;
 
         protected static string NoSpace { get => string.Empty; }

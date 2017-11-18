@@ -38,32 +38,37 @@ namespace DocumentationCommentsGenerator
         protected IEnumerable<DocumentationNode> GetClassDeclarationBaseClasses(SyntaxNode nodeToDocument)
         {
             var baseNodes = new List<DocumentationNode>();
+
             var baseClasses = nodeToDocument.ChildNodes()
                 .OfType<BaseListSyntax>().FirstOrDefault();
             if (baseClasses != null)
             {
                 var baseClasses2 = baseClasses.ChildNodes()
                     .OfType<SimpleBaseTypeSyntax>();
-                string identifierName = string.Empty;
+                string identName = string.Empty;
                 if (baseClasses2 != null)
                 {
                     foreach (var baseClass in baseClasses2)
                     {
+                        var identifierName = string.Empty;
                         var firstBaseNode = baseClass.ChildNodes().First();
-                        switch (firstBaseNode.Kind())
+                        var bClass = _model.GetSymbolInfo(firstBaseNode);
+                        var bClassSymbol = bClass.Symbol;
+                        if(bClassSymbol == null)
                         {
-                            case SyntaxKind.IdentifierName:
-                            case SyntaxKind.GenericName:
-                                var idName = firstBaseNode.ToString();
-                                identifierName = GetFullyQualifiedClassName(firstBaseNode, nodeToDocument);
-                                break;
-                            case SyntaxKind.SimpleBaseType:
-                                identifierName = baseClass.ChildNodes()
-                                    .OfType<IdentifierNameSyntax>()
-                                    .First()
-                                    .ToString();
-                                break;
+                            continue;
                         }
+                        var idName = bClass.Symbol.Name.ToString();
+                        var bClassNamespace = bClass.Symbol.ContainingNamespace.ToString();
+                        if (bClassNamespace.Equals("<global namespace>"))
+                        {
+                            identifierName = idName;
+                        }
+                        else
+                        {
+                            identifierName = string.Format("{0}.{1}", bClassNamespace, idName);
+                        }
+
                         var nullElement = Node.CreateXmlNullKeywordElement(SeeAlso, identifierName);
                         var baseNode = new DocumentationNode(nullElement, DocumentationCommentDelimiter);
                         baseNodes.Add(baseNode);
@@ -71,45 +76,6 @@ namespace DocumentationCommentsGenerator
                 }
             }
             return baseNodes;
-        }
-
-        private static string GetFullyQualifiedClassName(SyntaxNode classNameNode, SyntaxNode nodeToDocument)
-        {
-            var typeClassName = GetTypeClassName(classNameNode);
-            var syntaxTree = nodeToDocument.SyntaxTree;
-            var root = syntaxTree.GetRoot();
-            var usingNodes = root.ChildNodes()
-                .OfType<UsingDirectiveSyntax>();
-            foreach (var usingNode in usingNodes)
-            {
-                var usingIdentifier = usingNode.ChildNodes()
-                    .Where(u => u.IsKind(SyntaxKind.IdentifierName)
-                        || u.IsKind(SyntaxKind.QualifiedName))
-                    .FirstOrDefault();
-                if (usingIdentifier != null)
-                {
-                    var possibleFullyQualifiedClassName = string.Format(
-                        "{0}.{1}", usingIdentifier.ToString(), typeClassName);
-                    if (Type.GetType(possibleFullyQualifiedClassName) != null)
-                    {
-                        return possibleFullyQualifiedClassName;
-                    }
-                }
-            }
-            return typeClassName;
-        }
-
-        private static string GetTypeClassName(SyntaxNode classNameNode)
-        {
-            var className = classNameNode.ToString();
-            var baseClassNames = classNameNode.ChildNodes();
-            var genericArgumentCount = baseClassNames.Count();
-            if (genericArgumentCount > 0)
-            {
-                Match match = Regex.Match(className, TypeClassNameMatchString);
-                className = match.Value + "`" + genericArgumentCount.ToString();
-            }
-            return className;
         }
 
         private static string SeeAlso { get => "seealso";}

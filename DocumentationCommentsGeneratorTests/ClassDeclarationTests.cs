@@ -274,7 +274,7 @@ namespace GenerateDocumentationCommentsTests
         }
 
         [Fact]
-        public void ShouldAddSummaryAndSeeAlsoCommentsForChildClass()
+        public void ShoulAddSummaryAndNotSeeAlsoCommentsForUndefinedChildClass()
         {
             var classDecl =
 @"    internal class Class1 : Class0
@@ -284,7 +284,6 @@ namespace GenerateDocumentationCommentsTests
 @"    /// <summary>
     /// 
     /// </summary>
-    /// <seealso cref=""Class0""/>
     internal class Class1 : Class0
     {
     }";
@@ -304,6 +303,15 @@ namespace GenerateDocumentationCommentsTests
             var classDecl =
 @"    internal class Class1 : Class0, IClass, IClass2
     {
+    }
+    internal class Class0
+    {
+    }
+    internal interface IClass
+    {
+    }
+    internal interface IClass2
+    {
     }";
             var expected =
 @"    /// <summary>
@@ -314,7 +322,8 @@ namespace GenerateDocumentationCommentsTests
     /// <seealso cref=""IClass2""/>
     internal class Class1 : Class0, IClass, IClass2
     {
-    }";
+    }
+";
             var tree = CSharpSyntaxTree.ParseText(classDecl);
             var rewriter = new DocumentCommentsRewriter();
             var root = (CompilationUnitSyntax)tree.GetRoot();
@@ -340,8 +349,44 @@ namespace GenerateDocumentationCommentsTests
     /// <summary>
     /// 
     /// </summary>
-    /// <seealso cref=""System.Collections.Generic.IEnumerable`1""/>
+    /// <seealso cref=""System.Collections.Generic.IEnumerable""/>
     internal class Class1 : IEnumerable<Class0>
+    {
+    }";
+            var tree = CSharpSyntaxTree.ParseText(classDecl);
+            var rewriter = new DocumentCommentsRewriter();
+            var root = (CompilationUnitSyntax)tree.GetRoot();
+
+            var result = rewriter.Visit(root);
+
+            Assert.Equal(expected, result.ToFullString());
+        }
+
+        [Fact]
+        public void ShouldAddSummaryAndSeeAlsoCommentsForClassWithDefinedTemplatedInterface()
+        {
+            var classDecl =
+@"using System.Collections.Generic;
+
+    internal class Class1 : IEnumerable<Class0>
+    {
+    }
+
+    internal interface IEnumerable<T>
+    {
+    }";
+            var expected =
+@"using System.Collections.Generic;
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <seealso cref=""IEnumerable""/>
+    internal class Class1 : IEnumerable<Class0>
+    {
+    }
+
+    internal interface IEnumerable<T>
     {
     }";
             var tree = CSharpSyntaxTree.ParseText(classDecl);
